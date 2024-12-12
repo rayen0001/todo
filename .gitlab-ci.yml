@@ -75,17 +75,15 @@ dockerize:
   only:
     - main 
 
-# Deploy to EC2 Instance
-eploy:
+deploy:
   stage: deploy
   image: appleboy/drone-ssh
   script:
     - echo "$EC2_SSH_PRIVATE_KEY" > devops.pem
-    - chmod 600 devops.pem  
-    - ssh -i "devops.pem" ec2-user@ec2-54-90-215-135.compute-1.amazonaws.com "docker pull rayen1/todo-app:latest && docker run -d -p 8000:80 rayen1/todo-app:latest"
+    - chmod 777 devops.pem
+    - ssh -i devops.pem -o StrictHostKeyChecking=no ec2-user@ec2-54-90-215-135.compute-1.amazonaws.com "docker pull rayen1/todo-app:latest && docker run -d -p 8000:80 rayen1/todo-app:latest"
   only:
-    - main  # Deploy only from the main branch
+    - main
   environment:
     name: production
     url: http://54.90.215.135
-    
