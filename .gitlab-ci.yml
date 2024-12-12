@@ -87,4 +87,4 @@ eploy:
     - main  # Deploy only from the main branch
   environment:
     name: production
-    url: http://$EC2_IP_ADDRESS
+    url: http://54.90.215.135
