@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import *
@@ -6,7 +7,6 @@ from sqlalchemy.orm import sessionmaker, Session, relationship
 from pydantic import BaseModel
 from passlib.context import CryptContext
 from jose import JWTError, jwt
-from datetime import datetime, timedelta
 from typing import Optional, List
 
 # Constants
@@ -123,7 +123,9 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
 @app.post("/login", response_model=Token)
 def login(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = db.query(User).filter(User.username == user.username).first()
+    db_user = (db.query(User)
+               .filter(User.username == user.username)
+               .first())
     if not db_user or not verify_password(user.password, db_user.hashed_password):
         raise HTTPException(status_code=400,
                             detail="Invalid username or password")
@@ -147,7 +149,9 @@ def get_todo_by_id(todo_id: int, db: Session = Depends(get_db),
     user = db.query(User).filter(User.username == current_user).first()
 
     # Query for the specific Todo item based on todo_id and owner_id (current user)
-    db_todo = db.query(TodoInDB).filter(TodoInDB.id == todo_id, TodoInDB.owner_id == user.id).first()
+    db_todo = (db.query(TodoInDB)
+               .filter(TodoInDB.id == todo_id, TodoInDB.owner_id == user.id)
+               .first())
 
     # If the Todo doesn't exist, raise a 404 error
     if not db_todo:
@@ -169,8 +173,10 @@ def create_todo(todo: TodoCreate, db: Session = Depends(get_db),
     return db_todo
 
 @app.put("/todos/{todo_id}", response_model=TodoResponse)
-def update_todo(todo_id: int, todo: TodoUpdate, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
-    user = db.query(User).filter(User.username == current_user).first()
+def update_todo(todo_id: int, todo: TodoUpdate, db: Session = Depends(get_db),
+                current_user: str = Depends(get_current_user)):
+    user = (db.query(User)
+            .filter(User.username == current_user).first())
     db_todo = (db.query(TodoInDB)
                .filter(TodoInDB.id == todo_id, TodoInDB.owner_id == user.id)
                .first())
