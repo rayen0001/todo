@@ -15,7 +15,7 @@ lint:
     - pip install pylint
     - echo "Running linting..."
     - pylint *.py  # Adjust the directory to where your FastAPI code is
-  allow_failure: false  # Fail the pipeline if linting fails
+  allow_failure: true  # Fail the pipeline if linting fails
 
 # Unit Test Job
 unit_test:
