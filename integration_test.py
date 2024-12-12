@@ -1,8 +1,16 @@
+"""
+Integration tests for the FastAPI application.
+
+This module contains tests to ensure that various parts of the application
+work together as expected, including user registration, login, and todo
+management functionalities.
+"""
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from main import app, get_db, Base, User, TodoInDB
+from main import app, get_db, Base
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_todos.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
@@ -29,19 +37,19 @@ def test_user():
         "password": "testpassword"
     }
 
-def test_register(test_user):
+def test_register(test_user): # pylint: disable=redefined-outer-name
     """Test the registration of a new user."""
     response = client.post("/register", json=test_user)
     assert response.status_code == 200
     assert "access_token" in response.json()
 
-def test_login(test_user):
+def test_login(test_user): # pylint: disable=redefined-outer-name
     """Test user login functionality."""
     response = client.post("/login", json=test_user)
     assert response.status_code == 200
     assert "access_token" in response.json()
 
-def test_create_todo(test_user):
+def test_create_todo(test_user): # pylint: disable=redefined-outer-name
     """Test the creation of a todo item."""
     login_response = client.post("/login", json=test_user)
     access_token = login_response.json()["access_token"]
@@ -51,7 +59,7 @@ def test_create_todo(test_user):
     assert response.status_code == 200
     assert response.json()["task"] == "Test Todo"
 
-def test_get_todos(test_user):
+def test_get_todos(test_user): # pylint: disable=redefined-outer-name
     """Test retrieving the list of todos."""
     login_response = client.post("/login", json=test_user)
     access_token = login_response.json()["access_token"]
@@ -59,7 +67,7 @@ def test_get_todos(test_user):
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
-def test_update_todo(test_user):
+def test_update_todo(test_user): # pylint: disable=redefined-outer-name
     """Test updating a todo item."""
     login_response = client.post("/login", json=test_user)
     access_token = login_response.json()["access_token"]
@@ -74,7 +82,7 @@ def test_update_todo(test_user):
     assert response.json()["task"] == "Updated Todo"
     assert response.json()["completed"] is True
 
-def test_delete_todo(test_user):
+def test_delete_todo(test_user): # pylint: disable=redefined-outer-name
     """Test deleting a todo item."""
     login_response = client.post("/login", json=test_user)
     access_token = login_response.json()["access_token"]

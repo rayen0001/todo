@@ -1,21 +1,34 @@
-import pytest
+"""
+Unit tests for the FastAPI application.
+
+This module contains unit tests for individual components and
+functionalities of the FastAPI application, ensuring their correctness
+in isolation.
+"""
+
 import uuid
+import pytest
 from fastapi.testclient import TestClient
 from main import app, Base, engine, SessionLocal
-
 
 
 # Create a test client
 @pytest.fixture
 def client():
+    """
+    fixture classe
+    :return:
+    """
     with TestClient(app) as c:
         yield c
 
 
-# Set up a temporary SQLite database for tests
 @pytest.fixture(scope="function")
 def db_session():
-    # Set up the database and tables
+    """
+    Set up the database and tables
+    :return:
+    """
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     yield db
@@ -24,14 +37,25 @@ def db_session():
     Base.metadata.drop_all(bind=engine)
 
 
-# Fixture to generate a unique username for each test
+
 @pytest.fixture
 def unique_username():
+    """
+    unique username fixture
+    :return:
+    """
     return f"testuser_{uuid.uuid4()}"
 
 
 # Test user registration
-def test_register(client, db_session, unique_username):
+def test_register(client,  unique_username):# pylint: disable=redefined-outer-name
+    """
+    registration unit test
+    :param client:
+    :param db_session:
+    :param unique_username:
+    :return:
+    """
     response = client.post("/register",
                            json={"username": unique_username, "password": "password"})
     assert response.status_code == 200
@@ -40,19 +64,29 @@ def test_register(client, db_session, unique_username):
 
 
 # Test user login
-def test_login(client, db_session, unique_username):
-    # Register a new user
+def test_login(client,  unique_username):# pylint: disable=redefined-outer-name
+    """
+    login unit test
+    :param client:
+    :param db_session:
+    :param unique_username:
+    :return:
+    """
     client.post("/register", json={"username": unique_username, "password": "password"})
-
-    # Login with the same user
     response = client.post("/login", json={"username": unique_username, "password": "password"})
     assert response.status_code == 200
     assert "access_token" in response.json()
     assert response.json()["token_type"] == "bearer"
 
 
-# Test to get todos for a logged-in user
-def test_get_todos(client, db_session, unique_username):
+def test_get_todos(client,  unique_username):# pylint: disable=redefined-outer-name
+    """
+    Listing all todos unit test .
+    :param client:
+    :param db_session:
+    :param unique_username:
+    :return:
+    """
     # Register and login the user
     client.post("/register", json={"username": unique_username, "password": "password"})
     login_response = client.post("/login",
@@ -73,8 +107,14 @@ def test_get_todos(client, db_session, unique_username):
 
 
 # Test to create a new todo
-def test_create_todo(client, db_session, unique_username):
-    # Register and login the user
+def test_create_todo(client,  unique_username):# pylint: disable=redefined-outer-name
+    """
+    Creating a todo unit test .
+    :param client:
+    :param db_session:
+    :param unique_username:
+    :return:
+    """
     client.post("/register",
                 json={"username": unique_username, "password": "password"})
     login_response = client.post("/login",
@@ -91,8 +131,14 @@ def test_create_todo(client, db_session, unique_username):
 
 
 # Test to update a todo
-def test_update_todo(client, db_session, unique_username):
-    # Register and login the user
+def test_update_todo(client,  unique_username):# pylint: disable=redefined-outer-name
+    """
+    Updating a todo unit test .
+    :param client:
+    :param db_session:
+    :param unique_username:
+    :return:
+    """
     client.post("/register",
                 json={"username": unique_username, "password": "password"})
     login_response = client.post("/login",
@@ -115,8 +161,14 @@ def test_update_todo(client, db_session, unique_username):
 
 
 # Test to delete a todo
-def test_delete_todo(client, db_session, unique_username):
-    # Register and login the user
+def test_delete_todo(client,  unique_username):# pylint: disable=redefined-outer-name
+    """
+    Deleting a todo unit test .
+    :param client:
+    :param db_session:
+    :param unique_username:
+    :return:
+    """
     client.post("/register",
                 json={"username": unique_username, "password": "password"})
     login_response = client.post("/login",
@@ -136,8 +188,14 @@ def test_delete_todo(client, db_session, unique_username):
 
 
 # Test to mark a todo as complete
-def test_mark_todo_complete(client, db_session, unique_username):
-    # Register and login the user
+def test_mark_todo_complete(client,  unique_username):# pylint: disable=redefined-outer-name
+    """
+    Marking a todo complete unit test .
+    :param client:
+    :param db_session:
+    :param unique_username:
+    :return:
+    """
     client.post("/register",
                 json={"username": unique_username, "password": "password"})
     login_response = client.post("/login",
