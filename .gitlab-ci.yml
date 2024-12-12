@@ -1,0 +1,95 @@
+stages:
+  - lint
+  - test
+  - build
+  - push
+#   - deploy
+
+# Lint Job
+lint:
+  stage: lint
+  image: python:3.9
+  script:
+    - echo "Installing dependencies for linting..."
+    - pip install -r requirements.txt
+    - pip install pylint
+    - echo "Running linting..."
+    - pylint *.py  # Adjust the directory to where your FastAPI code is
+  allow_failure: true  # Fail the pipeline if linting fails
+
+# Unit Test Job
+unit_test:
+  stage: test
+  image: python:3.9
+  script:
+    - echo "Setting up environment..."
+    - python -m venv .venv
+    - source .venv/bin/activate
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - echo "Running unit tests..."
+    - pytest Unit_test.py
+  artifacts:
+    paths:
+      - .venv/
+    expire_in: 1 hour
+  allow_failure: false  # Fail the pipeline if unit tests fail
+
+# Integration Test Job
+integration_test:
+  stage: test
+  image: python:3.9
+  script:
+    - echo "Setting up environment for integration tests..."
+    - python -m venv .venv
+    - source .venv/bin/activate
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - echo "Running integration tests..."
+    - pytest Integration_test.py  
+  artifacts:
+    paths:
+      - .venv/
+    expire_in: 1 hour
+  allow_failure: false  
+
+# Build Docker Image
+docker_build:
+  stage: build
+  image: docker:20.10.7
+  services:
+    - docker:20.10.7-dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""  # Disable TLS for Docker-in-Docker
+  script:
+    - echo "Building Docker image from the Dockerfile..."
+    - docker build -t my-local-image .
+    - echo "Docker image built successfully."
+
+
+# Push Docker Image to Registry
+docker_push:
+  stage: push
+  image: docker:20.10.7
+  services:
+    - docker:20.10.7-dind
+  script:
+    - echo "Logging into Docker registry..."
+    - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+    - echo "Pushing Docker image..."
+    - docker push $CI_REGISTRY/$CI_PROJECT_NAME:$CI_COMMIT_SHA
+  only:
+    - main  # Push only from the main branch
+
+# # Deploy to EC2 Instance
+# deploy:
+#   stage: deploy
+#   image: appleboy/drone-ssh  # Use Docker image with SSH support
+#   script:
+#     - echo "Deploying to EC2 instance..."
+#     - ssh -o StrictHostKeyChecking=no -i $EC2_SSH_KEY_PATH ec2-user@$EC2_IP_ADDRESS "docker pull $CI_REGISTRY/$CI_PROJECT_NAME:$CI_COMMIT_SHA && docker run -d -p 80:80 $CI_REGISTRY/$CI_PROJECT_NAME:$CI_COMMIT_SHA"
+#   only:
+#     - main  # Deploy only from the main branch
+#   environment:
+#     name: production
+#     url: http://$EC2_IP_ADDRESS
