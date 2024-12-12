@@ -74,12 +74,10 @@ docker_push:
   services:
     - docker:20.10.7-dind
   script:
-    - echo "Logging into Docker registry..."
-    - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-    - echo "Pushing Docker image..."
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin --username "$CI_REGISTRY_USER"
     - docker push $CI_REGISTRY/$CI_PROJECT_NAME:$CI_COMMIT_SHA
   only:
-    - main  # Push only from the main branch
+    - main 
 
 # # Deploy to EC2 Instance
 # deploy:
