@@ -84,7 +84,7 @@ deploy:
   script:
     - ssh -T -o StrictHostKeyChecking=no -i ~/.ssh/test.pem ec2-user@ec2-34-226-207-246.compute-1.amazonaws.com "sudo docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD" "
     - ssh -T -o StrictHostKeyChecking=no -i ~/.ssh/test.pem ec2-user@ec2-34-226-207-246.compute-1.amazonaws.com "sudo docker pull $DOCKER_USERNAME/todo-app:latest"
-    - ssh -T -o StrictHostKeyChecking=no -i ~/.ssh/test.pem ec2-user@ec2-34-226-207-246.compute-1.amazonaws.com "sudo docker run -itd -p 8000:80 $DOCKER_USERNAME/todo-app:latest"
+    - ssh -T -o StrictHostKeyChecking=no -i ~/.ssh/test.pem ec2-user@ec2-34-226-207-246.compute-1.amazonaws.com "sudo docker run -itd -p 80:8000 $DOCKER_USERNAME/todo-app:latest"
 
   only:
     - main
