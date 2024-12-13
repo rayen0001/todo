@@ -50,10 +50,10 @@ This project is a **FastAPI-based To-Do App** designed to manage tasks efficient
         uvicorn app.main:app --reload
     ```
 5. **Access the API**:
-    - **Swagger UI**: http://127.0.0.1:8000/docs
+    - **Swagger UI**: http://127.0.0.1:8000/docs.
     
-###Contributing
 
+## Contributing
 1.  Fork the repository.
 2.  Create a feature branch (git checkout -b feature/new-feature).
 3.  Commit your changes (git commit -m 'Add new feature').
