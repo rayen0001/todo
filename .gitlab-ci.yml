@@ -75,15 +75,20 @@ dockerize:
   only:
     - main 
 
+
 deploy:
   stage: deploy
-  image: appleboy/drone-ssh
+  image: ubuntu:latest
+  before_script:
+   - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+   - eval $(ssh-agent -s)
+   - mkdir -p ~/.ssh
+   - echo "$EC2_SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/test.pem
+   - chmod 600 ~/.ssh/test.pem
   script:
-    - echo "$EC2_SSH_PRIVATE_KEY" > devops.pem
-    - chmod 777 devops.pem
-    - ssh -i devops.pem -o StrictHostKeyChecking=no ec2-user@ec2-54-90-215-135.compute-1.amazonaws.com "docker pull rayen1/todo-app:latest && docker run -d -p 8000:80 rayen1/todo-app:latest"
+    - ssh -T -o StrictHostKeyChecking=no -i ~/.ssh/test.pem ec2-user@ec2-54-90-215-135.compute-1.amazonaws.com "sudo docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD" "
+    - ssh -T -o StrictHostKeyChecking=no -i ~/.ssh/test.pem ec2-user@ec2-54-90-215-135.compute-1.amazonaws.com "sudo docker pull $CONTAINER_IMAGE"
+    - ssh -T -o StrictHostKeyChecking=no -i ~/.ssh/test.pem ec2-user@ec2-54-90-215-135.compute-1.amazonaws.com "sudo docker run -itd -p 2019:2019 $DOCKER_USERNAME/todo-app:latest"
+
   only:
     - main
-  environment:
-    name: production
-    url: http://54.90.215.135
