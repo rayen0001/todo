@@ -13,8 +13,8 @@ lint:
     - pip install -r requirements.txt
     - pip install pylint
     - echo "Running linting..."
-    - pylint *.py  # Adjust the directory to where your FastAPI code is
-  allow_failure: true  # Fail the pipeline if linting fails
+    - pylint *.py  
+  allow_failure: false  
 
 # Unit Test Job
 unit_test:
@@ -32,7 +32,7 @@ unit_test:
     paths:
       - .venv/
     expire_in: 1 hour
-  allow_failure: false  # Fail the pipeline if unit tests fail
+  allow_failure: false  
 
 # Integration Test Job
 integration_test:
@@ -58,15 +58,11 @@ dockerize:
   services:
     - docker:20.10.23-dind
   before_script:
-    # Login to DockerHub
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   script:
-    # Build the Docker image
     - docker build -t $DOCKER_USERNAME/todo-app:latest .
-    # Push the Docker image
     - docker push $DOCKER_USERNAME/todo-app:latest
   after_script:
-    # Save Docker image digest
     - docker inspect $DOCKER_USERNAME/todo-app:latest --format='{{index .RepoDigests 0}}' > image-digest.txt || echo "No digest available"
   artifacts:
     paths:
@@ -88,7 +84,7 @@ deploy:
   script:
     - ssh -T -o StrictHostKeyChecking=no -i ~/.ssh/test.pem ec2-user@ec2-34-226-207-246.compute-1.amazonaws.com "sudo docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD" "
     - ssh -T -o StrictHostKeyChecking=no -i ~/.ssh/test.pem ec2-user@ec2-34-226-207-246.compute-1.amazonaws.com "sudo docker pull $DOCKER_USERNAME/todo-app:latest"
-    - ssh -T -o StrictHostKeyChecking=no -i ~/.ssh/test.pem ec2-user@ec2-34-226-207-246.compute-1.amazonaws.com "sudo docker run -itd -p 8000:80 $DOCKER_USERNAME/todo-app:latestt"
+    - ssh -T -o StrictHostKeyChecking=no -i ~/.ssh/test.pem ec2-user@ec2-34-226-207-246.compute-1.amazonaws.com "sudo docker run -itd -p 8000:80 $DOCKER_USERNAME/todo-app:latest"
 
   only:
     - main
