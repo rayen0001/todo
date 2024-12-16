@@ -2,7 +2,7 @@ stages:
   - test
   - security_check
   - dockerize
-  # - deploy
+  - deploy
 
 # Lint Job
 lint:
@@ -99,7 +99,7 @@ dockerize:
     - if: '$CI_COMMIT_BRANCH == "main"'  
 
 # Deploy Job
-# deploy:
+deploy:
   stage: deploy
   image: ubuntu:latest
   before_script:
