@@ -7,6 +7,12 @@ pipeline {
 
     stages {
         stage('Lint') {
+            agent {
+                docker {
+                    image 'python:3.9'
+                    reuseNode true
+                }
+            }
             steps {
                 sh '''
                     python -m venv .venv
@@ -20,6 +26,12 @@ pipeline {
         }
 
         stage('Unit Tests') {
+            agent {
+                docker {
+                    image 'python:3.9'
+                    reuseNode true
+                }
+            }
             steps {
                 sh '''
                     python -m venv .venv
@@ -32,6 +44,12 @@ pipeline {
         }
 
         stage('Integration Tests') {
+            agent {
+                docker {
+                    image 'python:3.9'
+                    reuseNode true
+                }
+            }
             steps {
                 sh '''
                     python -m venv .venv
@@ -44,6 +62,12 @@ pipeline {
         }
 
         stage('Security Check') {
+            agent {
+                docker {
+                    image 'python:3.9'
+                    reuseNode true
+                }
+            }
             steps {
                 sh '''
                     python -m venv .venv
