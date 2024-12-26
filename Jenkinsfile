@@ -1,57 +1,81 @@
 pipeline {
-    agent any
-    
+    agent none
     stages {
         stage('Lint') {
+            agent {
+                docker {
+                    image 'qnib/pytest'
+                }
+            }
             steps {
-                sh '''#!/bin/bash
-                    python3 -m pip install --user pylint
-                    python3 -m pip install --user -r requirements.txt
-                    python3 -m pylint *.py || true
-                '''
+                script {
+                    echo "Installing dependencies for linting..."
+                    sh '''
+                        pip install -r requirements.txt
+                        pip install pylint
+                        pylint *.py
+                    '''
+                }
             }
         }
-        
-        stage('Unit Tests') {
+        stage('Unit Test') {
+            agent {
+                docker {
+                    image 'qnib/pytest'
+                }
+            }
             steps {
-                sh '''#!/bin/bash
-                    python3 -m pip install --user pytest
-                    python3 -m pip install --user -r requirements.txt
-                    python3 -m pytest unit_test.py
-                '''
+                script {
+                    echo "Setting up environment for unit tests..."
+                    sh '''
+                        pip install -r requirements.txt
+                        pytest unit_test.py
+                    '''
+                }
+            }
+            post {
+                always {
+                    junit 'test-reports/unit_test_results.xml'
+                }
             }
         }
-        
-        stage('Integration Tests') {
+        stage('Integration Test') {
+            agent {
+                docker {
+                    image 'qnib/pytest'
+                }
+            }
             steps {
-                sh '''#!/bin/bash
-                    python3 -m pip install --user pytest
-                    python3 -m pytest integration_test.py
-                '''
+                script {
+                    echo "Setting up environment for integration tests..."
+                    sh '''
+                        pip install -r requirements.txt
+                        pytest integration_test.py
+                    '''
+                }
+            }
+            post {
+                always {
+                    junit 'test-reports/integration_test_results.xml'
+                }
             }
         }
-        
         stage('Security Check') {
-            steps {
-                sh '''#!/bin/bash
-                    python3 -m pip install --user bandit
-                    python3 -m bandit -r main.py -x B105,B104 || true
-                '''
+            agent {
+                docker {
+                    image 'qnib/pytest'
+                }
             }
-        }
-        
-        stage('Build Docker Image') {
             steps {
-                sh '''#!/bin/bash
-                    docker build -t todo-app:${BUILD_NUMBER} .
-                '''
+                script {
+                    echo "Installing dependencies for security checks..."
+                    sh '''
+                        pip install -r requirements.txt
+                        pip install bandit
+                        bandit -r main.py -x B105,B104
+                    '''
+                }
             }
-        }
-    }
-    
-    post {
-        always {
-            cleanWs()
         }
     }
 }
