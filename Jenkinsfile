@@ -145,7 +145,7 @@ pipeline {
                     try {
                         sh """
                             . ${VENV_PATH}/bin/activate
-                            coverage combine
+                            coverage erase
                             coverage html -d htmlcov_combined
                         """
                     } catch (Exception e) {
@@ -168,37 +168,34 @@ pipeline {
             }
         }
 
-stage('Build and Push Docker Image') {
-
-    environment {
-        DOCKER_REGISTRY = 'docker.io' // Docker Hub registry
-        DOCKER_REPOSITORY = 'rayen1/my-image' // Replace with your Docker Hub username and repository name
-        DOCKER_CREDENTIALS = credentials('docker-hub-creds') // Jenkins credentials ID for Docker Hub
-    }
-    steps {
-        script {
-            try {
-                def imageTag = "${DOCKER_REPOSITORY}:${BUILD_NUMBER}"
-                
-                // Build Docker image
-                sh """
-                    docker build -t ${imageTag} .
-                """
-                
-                // Login and push to Docker Hub
-                sh """
-                    echo ${DOCKER_CREDENTIALS_PSW} | docker login ${DOCKER_REGISTRY} -u ${DOCKER_CREDENTIALS_USR} --password-stdin
-                    docker push ${imageTag}
-                """
-            } catch (Exception e) {
-                currentBuild.result = 'FAILURE'
-                error "Docker build/push failed: ${e.message}"
+        stage('Build and Push Docker Image') {
+            environment {
+                DOCKER_REGISTRY = 'docker.io' // Docker Hub registry
+                DOCKER_REPOSITORY = 'rayen1/my-image' // Replace with your Docker Hub username and repository name
+                DOCKER_CREDENTIALS = credentials('docker-hub-creds') // Jenkins credentials ID for Docker Hub
+            }
+            steps {
+                script {
+                    try {
+                        def imageTag = "${DOCKER_REPOSITORY}:${BUILD_NUMBER}"
+                        
+                        // Build Docker image
+                        sh """
+                            docker build -t ${imageTag} .
+                        """
+                        
+                        // Login and push to Docker Hub
+                        sh """
+                            echo ${DOCKER_CREDENTIALS_PSW} | docker login ${DOCKER_REGISTRY} -u ${DOCKER_CREDENTIALS_USR} --password-stdin
+                            docker push ${imageTag}
+                        """
+                    } catch (Exception e) {
+                        currentBuild.result = 'FAILURE'
+                        error "Docker build/push failed: ${e.message}"
+                    }
+                }
             }
         }
-    }
-}
-
-
     }
     
     post {
