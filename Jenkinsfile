@@ -117,48 +117,48 @@ pipeline {
             }
         }
 
-stage('Clean Up Old Logs and Generate Report') {
-    environment {
-        LOG_DIR = 'logs' // Directory where logs are stored
-        BACKUP_DIR = 'backup_logs' // Directory to store backups
-        REPORT_FILE = 'cleanup_report.txt' // Report file
-    }
-    steps {
-        script {
-            try {
-                // Step 1: Clean up logs older than 7 days
-                echo "Cleaning up old logs in ${LOG_DIR}..."
-                sh """
-                    find ${LOG_DIR} -type f -mtime +7 -exec rm -f {} \;
-                """
-                
-                // Step 2: Backup remaining logs
-                echo "Backing up remaining logs to ${BACKUP_DIR}..."
-                sh """
-                    mkdir -p ${BACKUP_DIR}
-                    cp ${LOG_DIR}/* ${BACKUP_DIR}/
-                """
-                
-                // Step 3: Generate a cleanup summary report
-                echo "Generating cleanup report..."
-                sh """
-                    echo "Cleanup Report - Build: ${BUILD_NUMBER}" > ${REPORT_FILE}
-                    echo "Logs older than 7 days have been removed." >> ${REPORT_FILE}
-                    echo "Remaining logs have been backed up to ${BACKUP_DIR}." >> ${REPORT_FILE}
-                    echo "Cleanup completed on: $(date)" >> ${REPORT_FILE}
-                """
-                
-                // Step 4: Archive the cleanup report
-                archiveArtifacts artifacts: "${REPORT_FILE}", allowEmptyArchive: true
-                echo "Cleanup report generated and archived successfully."
-                
-            } catch (Exception e) {
-                currentBuild.result = 'FAILURE'
-                error "Cleanup failed: ${e.message}"
+        stage('Clean Up Old Logs and Generate Report') {
+            environment {
+                LOG_DIR = 'logs' // Directory where logs are stored
+                BACKUP_DIR = 'backup_logs' // Directory to store backups
+                REPORT_FILE = 'cleanup_report.txt' // Report file
+            }
+            steps {
+                script {
+                    try {
+                        // Step 1: Clean up logs older than 7 days
+                        echo "Cleaning up old logs in ${LOG_DIR}..."
+                        sh """
+                            find ${LOG_DIR} -type f -mtime +7 -exec rm -f {} \;
+                        """
+                        
+                        // Step 2: Backup remaining logs
+                        echo "Backing up remaining logs to ${BACKUP_DIR}..."
+                        sh """
+                            mkdir -p ${BACKUP_DIR}
+                            cp ${LOG_DIR}/* ${BACKUP_DIR}/
+                        """
+                        
+                        // Step 3: Generate a cleanup summary report
+                        echo "Generating cleanup report..."
+                        sh """
+                            echo "Cleanup Report - Build: ${BUILD_NUMBER}" > ${REPORT_FILE}
+                            echo "Logs older than 7 days have been removed." >> ${REPORT_FILE}
+                            echo "Remaining logs have been backed up to ${BACKUP_DIR}." >> ${REPORT_FILE}
+                            echo "Cleanup completed on: $(date)" >> ${REPORT_FILE}
+                        """
+                        
+                        // Step 4: Archive the cleanup report
+                        archiveArtifacts artifacts: "${REPORT_FILE}", allowEmptyArchive: true
+                        echo "Cleanup report generated and archived successfully."
+                        
+                    } catch (Exception e) {
+                        currentBuild.result = 'FAILURE'
+                        error "Cleanup failed: ${e.message}"
+                    }
+                }
             }
         }
-    }
-}
 
 
 
