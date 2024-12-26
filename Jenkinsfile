@@ -14,10 +14,12 @@ pipeline {
             steps {
                 script {
                     echo "Installing dependencies for linting..."
-                    sh 'pip install -r requirements.txt'
-                    sh 'pip install pylint'
+                    // Create virtual environment and install dependencies
+                    sh 'python3 -m venv .venv'
+                    sh '. .venv/bin/activate && pip install -r requirements.txt'
+                    sh '. .venv/bin/activate && pip install pylint'
                     echo "Running linting..."
-                    sh 'pylint *.py'
+                    sh '. .venv/bin/activate && pylint *.py'
                 }
             }
         }
@@ -31,11 +33,12 @@ pipeline {
             steps {
                 script {
                     echo "Setting up environment for unit tests..."
+                    // Create virtual environment and install dependencies
                     sh 'python3 -m venv .venv'
-                    sh 'source .venv/bin/activate && pip install --upgrade pip'
-                    sh 'source .venv/bin/activate && pip install -r requirements.txt'
+                    sh '. .venv/bin/activate && pip install --upgrade pip'
+                    sh '. .venv/bin/activate && pip install -r requirements.txt'
                     echo "Running unit tests..."
-                    sh 'source .venv/bin/activate && pytest unit_test.py'
+                    sh '. .venv/bin/activate && pytest unit_test.py'
                 }
             }
             post {
@@ -54,11 +57,12 @@ pipeline {
             steps {
                 script {
                     echo "Setting up environment for integration tests..."
+                    // Create virtual environment and install dependencies
                     sh 'python3 -m venv .venv'
-                    sh 'source .venv/bin/activate && pip install --upgrade pip'
-                    sh 'source .venv/bin/activate && pip install -r requirements.txt'
+                    sh '. .venv/bin/activate && pip install --upgrade pip'
+                    sh '. .venv/bin/activate && pip install -r requirements.txt'
                     echo "Running integration tests..."
-                    sh 'source .venv/bin/activate && pytest integration_test.py'
+                    sh '. .venv/bin/activate && pytest integration_test.py'
                 }
             }
             post {
