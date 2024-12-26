@@ -87,90 +87,31 @@ pipeline {
             }
         }
 
-stage('Unit Tests') {
-    steps {
-        script {
-            try {
-                sh """
-                    . ${VENV_PATH}/bin/activate
-                    mkdir -p test-results
-                    pytest unit_test.py ${PYTEST_ARGS} --cov=. --cov-report=html:htmlcov
-                """
-            } catch (Exception e) {
-                currentBuild.result = 'FAILURE'
-                error "Unit tests failed: ${e.message}"
-            }
-        }
-    }
-    post {
-        always {
-            junit 'test-results/junit.xml'
-            publishHTML([
-                allowMissing: true,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'htmlcov',
-                reportFiles: 'index.html',
-                reportName: 'Unit Test Coverage Report'
-            ])
-        }
-    }
-}
-
-stage('Integration Tests') {
-    steps {
-        script {
-            try {
-                sh """
-                    . ${VENV_PATH}/bin/activate
-                    mkdir -p test-results
-                    pytest integration_test.py ${PYTEST_ARGS} --cov=. --cov-report=html:htmlcov_integration
-                """
-            } catch (Exception e) {
-                currentBuild.result = 'FAILURE'
-                error "Integration tests failed: ${e.message}"
-            }
-        }
-    }
-    post {
-        always {
-            junit 'test-results/junit.xml'
-            publishHTML([
-                allowMissing: true,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'htmlcov_integration',
-                reportFiles: 'index.html',
-                reportName: 'Integration Test Coverage Report'
-            ])
-        }
-    }
-}
-
-        stage('Combine Coverage Reports') {
+        stage('Unit and Integration Tests') {
             steps {
                 script {
                     try {
                         sh """
                             . ${VENV_PATH}/bin/activate
-                            coverage erase
-                            coverage html -d htmlcov_combined
+                            mkdir -p test-results
+                            pytest unit_test.py integration_test.py ${PYTEST_ARGS} --cov=. --cov-report=html:htmlcov
                         """
                     } catch (Exception e) {
                         currentBuild.result = 'FAILURE'
-                        error "Combining coverage reports failed: ${e.message}"
+                        error "Tests failed: ${e.message}"
                     }
                 }
             }
             post {
                 always {
+                    junit 'test-results/junit.xml'
                     publishHTML([
                         allowMissing: true,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
-                        reportDir: 'htmlcov_combined',
+                        reportDir: 'htmlcov',
                         reportFiles: 'index.html',
-                        reportName: 'Combined Coverage Report'
+                        reportName: 'Unit and Integration Test Coverage Report'
                     ])
                 }
             }
