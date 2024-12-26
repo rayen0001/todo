@@ -32,7 +32,7 @@ pipeline {
                             . ${VENV_PATH}/bin/activate
                             python -m pip install --upgrade pip
                             pip install -r requirements.txt
-                            pip install pylint python-jose pytest pytest-cov
+                            pip install pylint python-jose pytest pytest-cov coverage
                         """
                     } catch (Exception e) {
                         currentBuild.result = 'FAILURE'
@@ -124,7 +124,7 @@ pipeline {
                         sh """
                             . ${VENV_PATH}/bin/activate
                             mkdir -p test-results
-                            pytest integration_test.py ${PYTEST_ARGS}
+                            pytest integration_test.py ${PYTEST_ARGS} --cov=. --cov-report=html
                         """
                     } catch (Exception e) {
                         currentBuild.result = 'FAILURE'
@@ -139,59 +139,66 @@ pipeline {
             }
         }
 
-        stage('Build and Push Docker Image') {
-            when {
-                branch 'main'
-            }
-            environment {
-                DOCKER_REGISTRY = 'your-registry'
-                DOCKER_CREDENTIALS = credentials('docker-creds')
-            }
+        stage('Combine Coverage Reports') {
             steps {
                 script {
                     try {
-                        def imageTag = "todo-app:${BUILD_NUMBER}"
-                        
-                        // Build Docker image
                         sh """
-                            docker build -t ${imageTag} .
-                            docker tag ${imageTag} ${DOCKER_REGISTRY}/${imageTag}
-                        """
-                        
-                        // Login and push to registry
-                        sh """
-                            echo ${DOCKER_CREDENTIALS_PSW} | docker login ${DOCKER_REGISTRY} -u ${DOCKER_CREDENTIALS_USR} --password-stdin
-                            docker push ${DOCKER_REGISTRY}/${imageTag}
+                            . ${VENV_PATH}/bin/activate
+                            coverage combine
+                            coverage html -d htmlcov_combined
                         """
                     } catch (Exception e) {
                         currentBuild.result = 'FAILURE'
-                        error "Docker build/push failed: ${e.message}"
+                        error "Combining coverage reports failed: ${e.message}"
                     }
+                }
+            }
+            post {
+                always {
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'htmlcov_combined',
+                        reportFiles: 'index.html',
+                        reportName: 'Combined Coverage Report'
+                    ])
                 }
             }
         }
 
-        stage('Deploy to Development') {
-            when {
-                branch 'main'
-            }
-            environment {
-                KUBE_CONFIG = credentials('kube-config')
-            }
-            steps {
-                script {
-                    try {
-                        sh """
-                            kubectl --kubeconfig=${KUBE_CONFIG} apply -f k8s/
-                            kubectl --kubeconfig=${KUBE_CONFIG} rollout status deployment/todo-app
-                        """
-                    } catch (Exception e) {
-                        currentBuild.result = 'FAILURE'
-                        error "Deployment failed: ${e.message}"
-                    }
-                }
+stage('Build and Push Docker Image') {
+
+    environment {
+        DOCKER_REGISTRY = 'docker.io' // Docker Hub registry
+        DOCKER_REPOSITORY = 'rayen1/my-image' // Replace with your Docker Hub username and repository name
+        DOCKER_CREDENTIALS = credentials('docker-hub-creds') // Jenkins credentials ID for Docker Hub
+    }
+    steps {
+        script {
+            try {
+                def imageTag = "${DOCKER_REPOSITORY}:${BUILD_NUMBER}"
+                
+                // Build Docker image
+                sh """
+                    docker build -t ${imageTag} .
+                """
+                
+                // Login and push to Docker Hub
+                sh """
+                    echo ${DOCKER_CREDENTIALS_PSW} | docker login ${DOCKER_REGISTRY} -u ${DOCKER_CREDENTIALS_USR} --password-stdin
+                    docker push ${imageTag}
+                """
+            } catch (Exception e) {
+                currentBuild.result = 'FAILURE'
+                error "Docker build/push failed: ${e.message}"
             }
         }
+    }
+}
+
+
     }
     
     post {
@@ -207,7 +214,7 @@ pipeline {
                     <p>Check console output at <a href='${env.BUILD_URL}'>${env.JOB_NAME} [${env.BUILD_NUMBER}]</a></p>
                 """,
                 recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider']],
-                to: 'team@example.com'
+                to: 'rayenaouechria@gmail.com'
             )
         }
         
