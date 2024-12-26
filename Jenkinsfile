@@ -117,40 +117,18 @@ pipeline {
             }
         }
 
-        stage('Generate Documentation') {
-            steps {
-                script {
-                    try {
-                        echo "Generating project documentation..."
-
-                        sh """
-                            . ${VENV_PATH}/bin/activate
-                            pip install pdoc
-                            pdoc --html . --output-dir docs --force
-                        """
-
-                        archiveArtifacts artifacts: 'docs/**/*', allowEmptyArchive: false
-
-                        echo "Documentation generated successfully!"
-                    } catch (Exception e) {
-                        currentBuild.result = 'FAILURE'
-                        error "Documentation generation failed: ${e.message}"
-                    }
-                }
-            }
-        }
         stage('Package and Archive') {
             steps {
                 script {
                     try {
                         echo "Packaging application for distribution..."
-                        
+
                         sh """
                             tar -czvf application-${BUILD_NUMBER}.tar.gz .
                         """
-                        
+
                         archiveArtifacts artifacts: "application-${BUILD_NUMBER}.tar.gz", allowEmptyArchive: false
-                        
+
                         echo "Application packaged and archived successfully!"
                     } catch (Exception e) {
                         currentBuild.result = 'FAILURE'
