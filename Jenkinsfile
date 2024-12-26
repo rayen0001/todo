@@ -1,81 +1,97 @@
 pipeline {
-    agent none
+    agent any
+
+    environment {
+        PYTHON_VERSION = '3.9'
+    }
+
     stages {
         stage('Lint') {
             agent {
                 docker {
-                    image 'qnib/pytest'
+                    image 'python:3.9'
+                    reuseNode true
                 }
             }
             steps {
-                script {
-                    echo "Installing dependencies for linting..."
-                    sh '''
-                        pip install -r requirements.txt
-                        pip install pylint
-                        pylint *.py
-                    '''
-                }
+                sh '''
+                    python -m venv .venv
+                    . .venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                    pip install pylint
+                    pylint *.py
+                '''
             }
         }
-        stage('Unit Test') {
+
+        stage('Unit Tests') {
             agent {
                 docker {
-                    image 'qnib/pytest'
+                    image 'python:3.9'
+                    reuseNode true
                 }
             }
             steps {
-                script {
-                    echo "Setting up environment for unit tests..."
-                    sh '''
-                        pip install -r requirements.txt
-                        pytest unit_test.py
-                    '''
-                }
-            }
-            post {
-                always {
-                    junit 'test-reports/unit_test_results.xml'
-                }
+                sh '''
+                    python -m venv .venv
+                    . .venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                    pytest unit_test.py
+                '''
             }
         }
-        stage('Integration Test') {
+
+        stage('Integration Tests') {
             agent {
                 docker {
-                    image 'qnib/pytest'
+                    image 'python:3.9'
+                    reuseNode true
                 }
             }
             steps {
-                script {
-                    echo "Setting up environment for integration tests..."
-                    sh '''
-                        pip install -r requirements.txt
-                        pytest integration_test.py
-                    '''
-                }
-            }
-            post {
-                always {
-                    junit 'test-reports/integration_test_results.xml'
-                }
+                sh '''
+                    python -m venv .venv
+                    . .venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                    pytest integration_test.py
+                '''
             }
         }
+
         stage('Security Check') {
             agent {
                 docker {
-                    image 'qnib/pytest'
+                    image 'python:3.9'
+                    reuseNode true
                 }
             }
             steps {
+                sh '''
+                    python -m venv .venv
+                    . .venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                    pip install bandit
+                    bandit -r main.py -x B105,B104
+                '''
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
                 script {
-                    echo "Installing dependencies for security checks..."
-                    sh '''
-                        pip install -r requirements.txt
-                        pip install bandit
-                        bandit -r main.py -x B105,B104
-                    '''
+                    def dockerImage = docker.build("todo-app:${env.BUILD_ID}")
                 }
             }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
         }
     }
 }
