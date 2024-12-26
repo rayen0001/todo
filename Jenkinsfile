@@ -117,34 +117,50 @@ pipeline {
             }
         }
 
-        stage('Build and Push Docker Image') {
-            environment {
-                DOCKER_REGISTRY = 'docker.io' // Docker Hub registry
-                DOCKER_REPOSITORY = 'rayen1/my-image' // Replace with your Docker Hub username and repository name
-                DOCKER_CREDENTIALS = credentials('docker-hub-creds') // Jenkins credentials ID for Docker Hub
-            }
+        stage('Generate Documentation') {
             steps {
                 script {
                     try {
-                        def imageTag = "${DOCKER_REPOSITORY}:${BUILD_NUMBER}"
-                        
-                        // Build Docker image
+                        echo "Generating project documentation..."
+
                         sh """
-                            docker build -t ${imageTag} .
+                            . ${VENV_PATH}/bin/activate
+                            pip install pdoc
+                            pdoc --html . --output-dir docs --force
                         """
-                        
-                        // Login and push to Docker Hub
-                        sh """
-                            echo ${DOCKER_CREDENTIALS_PSW} | docker login ${DOCKER_REGISTRY} -u ${DOCKER_CREDENTIALS_USR} --password-stdin
-                            docker push ${imageTag}
-                        """
+
+                        archiveArtifacts artifacts: 'docs/**/*', allowEmptyArchive: false
+
+                        echo "Documentation generated successfully!"
                     } catch (Exception e) {
                         currentBuild.result = 'FAILURE'
-                        error "Docker build/push failed: ${e.message}"
+                        error "Documentation generation failed: ${e.message}"
                     }
                 }
             }
         }
+        stage('Package and Archive') {
+            steps {
+                script {
+                    try {
+                        echo "Packaging application for distribution..."
+                        
+                        sh """
+                            tar -czvf application-${BUILD_NUMBER}.tar.gz .
+                        """
+                        
+                        archiveArtifacts artifacts: "application-${BUILD_NUMBER}.tar.gz", allowEmptyArchive: false
+                        
+                        echo "Application packaged and archived successfully!"
+                    } catch (Exception e) {
+                        currentBuild.result = 'FAILURE'
+                        error "Packaging and archiving failed: ${e.message}"
+                    }
+                }
+            }
+        }
+
+
     }
     
     post {
